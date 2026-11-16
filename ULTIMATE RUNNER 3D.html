@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>SUPER RUNNER 3D</title>
+<style>
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
+canvas {
+  display: block;
+  margin: auto;
+  background: #286b35;
+  width: min(100vw, 500px);
+  height: 75vh;
+}
+button {
+  padding: 15px 25px;
+  margin: 5px;
+  border: none;
+  border-radius: 12px;
+  font-size: 20px;
+  background: orange;
+}
+</style>
+</head>
+<body>
+
+<h2>🏃 SUPER RUNNER 3D</h2>
+<div>Score: <span id="score">0</span>
+ | Coins: <span id="coins">0</span></div>
+
+<canvas id="game" width="500" height="650"></canvas>
+
+<button onclick="move(-1)">⬅️ LEFT</button>
+<button onclick="jump()">⬆️ JUMP</button>
+<button onclick="move(1)">RIGHT ➡️</button>
+<br>
+<button onclick="start()">START / RESTART</button>
+
+<script>
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
+
+let player = 1;
+let obstacles = [];
+let coins = [];
+let score = 0;
+let coinCount = 0;
+let running = false;
+let frame = 0;
+let jumping = 0;
+
+function move(d) {
+  player = Math.max(0, Math.min(2, player+d));
+}
+function jump() {
+  if (running && jumping === 0) jumping = 25;
+}
+
+function start() {
+  player = 1;
+  obstacles = [];
+  coins = [];
+  score = 0;
+  coinCount = 0;
+  frame = 0;
+  jumping = 0;
+  running = true;
+  loop();
+}
+
+function drawPlayer() {
+  let x = 130 + player*120;
+  let y = 520 - jumping*2;
+
+  ctx.fillStyle = "#222";
+  ctx.beginPath();
+  ctx.ellipse(x,y+35,23,9,0,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#ffcc99";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.arc(x,y-25,15,0,Math.PI*2);
+  ctx.fillStyle = "#ffcc99";
+  ctx.fill();
+
+  ctx.strokeStyle = "#00aaff";
+  ctx.lineWidth = 15;
+  ctx.beginPath();
+  ctx.moveTo(x,y-8);
+  ctx.lineTo(x,y+35);
+  ctx.stroke();
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(x,y+35);
+  ctx.lineTo(x-12,y+55);
+  ctx.moveTo(x,y+35);
+  ctx.lineTo(x+12,y+55);
+  ctx.stroke();
+}
+
+function drawRoad() {
+  ctx.fillStyle = "#555";
+  ctx.beginPath();
+  ctx.moveTo(90,0);
+  ctx.lineTo(410,0);
+  ctx.lineTo(500,650);
+  ctx.lineTo(0,650);
+  ctx.fill();
+
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 4;
+  ctx.setLineDash([25,25]);
+  ctx.beginPath();
+  ctx.moveTo(196,0);
+  ctx.lineTo(166,650);
+  ctx.moveTo(304,0);
+  ctx.lineTo(334,650);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function loop() {
+  if (!running) return;
+
+  ctx.clearRect(0,0,500,650);
+  drawRoad();
+
+  frame++;
+  score++;
+
+  if(frame % 65 === 0) {
+    obstacles.push({
+      lane: Math.floor(Math.random()*3),
+      y: -30
+    });
+  }
+  if(frame % 90 === 0) {
+    coins.push({
+      lane: Math.floor(Math.random()*3),
+      y: -30
+    });
+  }
+
+  obstacles.forEach(o => {
+    o.y += 5 + score/1000;
+    let x = 130 + o.lane*120;
+    ctx.fillStyle = "red";
+    ctx.fillRect(x-20,o.y,40,40);
+
+    if(o.lane===player && o.y>475 &&
+       o.y<550 && jumping<12) {
+      running=false;
+    }
+  });
+
+  coins.forEach(o => {
+    o.y += 5;
+    let x=130+o.lane*120;
+    ctx.fillStyle="gold";
+    ctx.beginPath();
+    ctx.arc(x,o.y,13,0,Math.PI*2);
+    ctx.fill();
+
+    if(o.lane===player && o.y>480 && o.y<550) {
+      coinCount++;
+      o.y=700;
+    }
+  });
+
+  obstacles = obstacles.filter(o=>o.y<680);
+  coins = coins.filter(o=>o.y<680);
+
+  if(jumping>0) jumping--;
+  drawPlayer();
+
+  document.getElementById("score").textContent=score;
+  document.getElementById("coins").textContent=coinCount;
+
+  if(!running) {
+    ctx.fillStyle="white";
+    ctx.font="35px Arial";
+    ctx.fillText("GAME OVER!",135,300);
+    ctx.font="20px Arial";
+    ctx.fillText("Press RESTART to play",125,340);
+    return;
+  }
+
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="ArrowLeft") move(-1);
+  if(e.key==="ArrowRight") move(1);
+  if(e.key==="ArrowUp" || e.key===" ") jump();
+});
+
+</script>
+</body>
+</html>
